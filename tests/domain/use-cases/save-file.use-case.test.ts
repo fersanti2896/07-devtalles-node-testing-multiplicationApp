@@ -8,19 +8,17 @@ describe('Test in the save-file.', () => {
         fileName: 'custom-table-name'
     }
 
-    const filePath = `${customOptions.fileDestination}/${customOptions.fileName}.txt`;
+    const customFilePath = `${customOptions.fileDestination}/${customOptions.fileName}.txt`;
 
     afterEach(() => {
-        const outputFolder = fs.existsSync('outputs');
+        const outputFolderExists = fs.existsSync('outputs');
+        // if( outputFolderExists ) fs.rmSync('outputs', { recursive: true });
 
-        if( outputFolder ) fs.rmSync('outputs', { recursive: true });
-
-        const filePathExists = `${customOptions.fileDestination}/${customOptions.fileName}.txt`;
-        if( filePathExists ) fs.rmSync( customOptions.fileDestination, { recursive: true } )
-
+        const customOutputFolderExists = fs.existsSync(customOptions.fileDestination);
+        if( customOutputFolderExists ) fs.rmSync( customOptions.fileDestination, { recursive: true } );
     })
 
-    test('should save file wit default values.', () => { 
+    test('should save file with default values.', () => { 
         const saveFile = new SaveFile();
         const filePath = 'outputs/table.txt';
         const options = {
@@ -52,5 +50,28 @@ describe('Test in the save-file.', () => {
         expect( result ).toBeTruthy();
         expect( fileExits ).toBeTruthy();
         expect( fileContent ).toBe( options.fileContent );
+    });
+
+    test('should return false if directory could not be created.', () => { 
+        const saveFile = new SaveFile();
+        const mkdirSpy = jest.spyOn(fs, 'mkdirSync').mockImplementation( 
+            () => { throw new Error('This is a custom error message from testing.') } 
+        );
+        const result = saveFile.execute( customOptions );
+
+        expect( result ).toBe( false );
+
+        mkdirSpy.mockRestore();
+    });
+
+    test('should return false if file could not be created.', () => { 
+        const saveFile = new SaveFile();
+        const writeFileSpy = jest.spyOn(fs, 'writeFileSync').mockImplementation( 
+            () => { throw new Error('This is a custom writing error message.') } 
+        );
+        const result = saveFile.execute( { fileContent: 'Hola' } );
+
+        expect( result ).toBe( false );
+        writeFileSpy.mockRestore();
     });
 });
